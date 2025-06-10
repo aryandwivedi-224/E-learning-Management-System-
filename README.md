@@ -112,6 +112,3 @@ Contribution & Deployment: For any contribution guidelines or deployment instruc
 
 This README provides a comprehensive guide to setting up and understanding your MERN stack E-Learning Management System. Feel free to expand any section, provide additional usage instructions, or include more visuals and documentation as your project evolves.
 
-If you have any questions regarding configuration, usage, or deployment, consider adding a "Troubleshooting" or "FAQ" section at the end of your documentation.
-
-H
