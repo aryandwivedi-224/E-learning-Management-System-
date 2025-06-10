@@ -1,4 +1,3 @@
-Here's the reformatted README for your E-Learning Management System, suitable for GitHub. I've used Markdown to improve readability, added a table of contents, and made some minor wording adjustments for clarity.
 
 E-Learning Management System
 Introduction
