@@ -44,6 +44,7 @@ cd backend
 Install Dependencies:
 
 Bash
+
 npm install
 
 Create the Configuration File:
