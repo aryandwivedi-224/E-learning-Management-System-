@@ -5,13 +5,32 @@ import { CoursePurchase } from "../models/coursePurchase.model.js";
 import { Lecture } from "../models/lecture.model.js";
 import { User } from "../models/user.model.js";
 
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET,
-});
+// Initialize Razorpay only if keys are present
+let razorpay;
+try {
+  if (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) {
+    razorpay = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID,
+      key_secret: process.env.RAZORPAY_KEY_SECRET,
+    });
+    console.log('Razorpay initialized successfully');
+  } else {
+    console.warn('Razorpay keys not found. Payment functionality will be disabled.');
+  }
+} catch (error) {
+  console.error('Failed to initialize Razorpay:', error.message);
+  console.warn('Payment functionality will be disabled.');
+}
 
 export const createCheckoutSession = async (req, res) => {
   try {
+    if (!razorpay) {
+      return res.status(503).json({
+        success: false,
+        message: "Payment service is currently unavailable. Please try again later."
+      });
+    }
+
     const userId = req.id;
     const { courseId } = req.body;
 
@@ -19,41 +38,44 @@ export const createCheckoutSession = async (req, res) => {
     if (!course) return res.status(404).json({ message: "Course not found!" });
 
     // Create a new course purchase record
-    const newPurchase = new CoursePurchase({
-      courseId,
+    const purchase = await CoursePurchase.create({
       userId,
+      courseId,
       amount: course.coursePrice,
       status: "pending",
     });
 
-    // Create a Razorpay order
-    const order = await razorpay.orders.create({
-      amount: course.coursePrice * 100, // Amount in paise
-      currency: "INR",
-      receipt: `receipt_${courseId}_${userId}`,
-      notes: {
-        courseId: courseId,
-        userId: userId,
-      },
-    });
+    try {
+      // Create a Razorpay order
+      const order = await razorpay.orders.create({
+        amount: course.coursePrice * 100, // Amount in paise
+        currency: "INR",
+        receipt: `receipt_${courseId}_${userId}`,
+        notes: {
+          purchaseId: purchase._id.toString(),
+          userId: userId,
+          courseId: courseId,
+        },
+      });
 
-    if (!order.id) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Error while creating order" });
+      // Update purchase with order ID
+      purchase.orderId = order.id;
+      await purchase.save();
+
+      return res.status(200).json({
+        success: true,
+        orderId: order.id,
+        amount: order.amount,
+        currency: order.currency,
+        key: process.env.RAZORPAY_KEY_ID, // Publishable key for frontend
+      });
+    } catch (error) {
+      console.error('Razorpay order creation failed:', error);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to create payment order. Please try again."
+      });
     }
-
-    // Save the purchase record
-    newPurchase.paymentId = order.id;
-    await newPurchase.save();
-
-    return res.status(200).json({
-      success: true,
-      orderId: order.id,
-      amount: order.amount,
-      currency: order.currency,
-      key: process.env.RAZORPAY_KEY_ID, // Publishable key for frontend
-    });
   } catch (error) {
     console.log(error);
     return res.status(500).json({ message: "Internal Server Error" });
@@ -62,47 +84,69 @@ export const createCheckoutSession = async (req, res) => {
 
 export const verifyPayment = async (req, res) => {
   try {
-    const {
-      razorpay_order_id,
-      razorpay_payment_id,
-      razorpay_signature,
-    } = req.body;
+    if (!razorpay) {
+      return res.status(503).json({
+        success: false,
+        message: "Payment verification service is currently unavailable. Please contact support."
+      });
+    }
+
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+      return res.status(400).json({ 
+        success: false,
+        message: "Missing required payment details" 
+      });
+    }
 
     // Verify the payment signature
     const body = razorpay_order_id + "|" + razorpay_payment_id;
     const expectedSignature = crypto
-      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET || '')
       .update(body.toString())
       .digest("hex");
 
     const isAuthentic = expectedSignature === razorpay_signature;
 
     if (!isAuthentic) {
-      return res.status(400).json({ message: "Invalid payment signature" });
+      console.warn('Invalid payment signature received');
+      return res.status(400).json({ 
+        success: false,
+        message: "Invalid payment signature" 
+      });
     }
 
     const purchase = await CoursePurchase.findOne({
-      paymentId: razorpay_order_id,
+      orderId: razorpay_order_id,
     }).populate({ path: "courseId" });
 
     if (!purchase) {
-      return res.status(404).json({ message: "Purchase not found" });
+      console.warn(`Purchase not found for order ID: ${razorpay_order_id}`);
+      return res.status(404).json({ 
+        success: false,
+        message: "Purchase not found" 
+      });
     }
 
+    // Update purchase status
     purchase.status = "completed";
     purchase.paymentId = razorpay_payment_id;
-
-    // Make all lectures visible by setting `isPreviewFree` to true
-    if (purchase.courseId && purchase.courseId.lectures.length > 0) {
-      await Lecture.updateMany(
-        { _id: { $in: purchase.courseId.lectures } },
-        { $set: { isPreviewFree: true } }
-      );
-    }
-
+    purchase.paymentDate = new Date();
+    
     await purchase.save();
 
-    // Update user's enrolledCourses
+    try {
+      // Add course to user's enrolled courses
+      await User.findByIdAndUpdate(
+        purchase.userId,
+        { $addToSet: { courses: purchase.courseId._id } },
+        { new: true }
+      );
+    } catch (userUpdateError) {
+      console.error('Failed to update user courses:', userUpdateError);
+      // Continue even if user update fails, as the payment is already verified
+    }
     await User.findByIdAndUpdate(
       purchase.userId,
       { $addToSet: { enrolledCourses: purchase.courseId._id } },
@@ -170,18 +214,53 @@ export const getAllPurchasedCourse = async (_, res) => {
 
 export const handleWebhook = async (req, res) => {
   try {
+    if (!razorpay) {
+      console.error('Razorpay not initialized - webhook received but cannot process');
+      return res.status(503).json({ 
+        success: false, 
+        message: 'Payment service unavailable' 
+      });
+    }
+
     const razorpaySignature = req.headers['x-razorpay-signature'];
     const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
 
+    if (!razorpaySignature || !webhookSecret) {
+      console.warn('Missing required webhook headers or configuration');
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Missing required headers or configuration' 
+      });
+    }
+
     // Verify webhook signature
     const body = JSON.stringify(req.body);
-    const expectedSignature = crypto
-      .createHmac('sha256', webhookSecret)
-      .update(body)
-      .digest('hex');
+    if (!body) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Empty request body' 
+      });
+    }
 
-    if (razorpaySignature !== expectedSignature) {
-      return res.status(400).json({ message: 'Invalid webhook signature' });
+    try {
+      const expectedSignature = crypto
+        .createHmac('sha256', webhookSecret)
+        .update(body)
+        .digest('hex');
+
+      if (razorpaySignature !== expectedSignature) {
+        console.warn('Invalid webhook signature received');
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Invalid webhook signature' 
+        });
+      }
+    } catch (error) {
+      console.error('Error verifying webhook signature:', error);
+      return res.status(500).json({ 
+        success: false, 
+        message: 'Error processing webhook' 
+      });
     }
 
     const event = req.body;
