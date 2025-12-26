@@ -90,7 +90,7 @@ const app = express();
 const PORT = process.env.PORT || 8080;
 
 /**
- * ⚠️ IMPORTANT
+ * IMPORTANT
  * Razorpay webhook must be BEFORE express.json()
  */
 app.use(
