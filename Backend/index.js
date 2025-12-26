@@ -68,7 +68,6 @@
 //     console.log(`Server is running on port ${port}`);
 // })
 
-
 import express from "express";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
@@ -81,7 +80,7 @@ import courseRoute from "./routes/course.route.js";
 import mediaRoute from "./routes/media.route.js";
 import purchaseRoute from "./routes/purchaseCourse.route.js";
 
-dotenv.config({});
+dotenv.config();
 
 // Connect DB
 connectDB();
@@ -90,39 +89,47 @@ const app = express();
 const PORT = process.env.PORT || 8080;
 
 /**
- * IMPORTANT
- * Razorpay webhook must be BEFORE express.json()
+ * Razorpay webhook MUST be before express.json()
  */
 app.use(
   "/api/v1/purchase/webhook",
   express.raw({ type: "application/json" })
 );
 
-// Middlewares
+// =====================
+// MIDDLEWARES
+// =====================
 app.use(express.json());
 app.use(cookieParser());
+
+// 🔥🔥🔥 FIXED CORS 🔥🔥🔥
 app.use(
   cors({
     origin: [
       "http://localhost:5173",
-      "https://e-learning-frontend-9h3q.onrender.com",
+      "https://e-learning-management-system-a0dk.onrender.com", // ✅ REAL FRONTEND
     ],
     credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
-// Base route
+// =====================
+// ROUTES
+// =====================
 app.get("/", (req, res) => {
   res.send("Backend is running...");
 });
 
-// Routes
 app.use("/api/v1/user", userRoute);
 app.use("/api/v1/course", courseRoute);
 app.use("/api/v1/media", mediaRoute);
 app.use("/api/v1/purchase", purchaseRoute);
 
-// Health check
+// =====================
+// HEALTH CHECK
+// =====================
 app.get("/api/v1/health", (req, res) => {
   res.status(200).json({
     status: "ok",
@@ -132,13 +139,17 @@ app.get("/api/v1/health", (req, res) => {
   });
 });
 
-// Error handler
+// =====================
+// ERROR HANDLER
+// =====================
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ error: "Something went wrong!" });
 });
 
-// Start server
+// =====================
+// START SERVER
+// =====================
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
