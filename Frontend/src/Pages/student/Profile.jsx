@@ -1,0 +1,401 @@
+// import { DialogFooter, DialogHeader } from "@/components/ui/dialog";
+// import { Avatar, AvatarFallback, AvatarImage } from "@radix-ui/react-avatar";
+// import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+// import { Label } from "@/components/ui/label";
+// import { Input } from "@/components/ui/input";
+// import { Button } from "@/components/ui/button";
+// import { Loader2 } from "lucide-react";
+// import React, { useState, useEffect } from "react";
+// import Course from "./Course";
+// import { useLoadUserQuery, useUpdateUserMutation } from "@/features/api/authapi";
+// import { retry } from "@reduxjs/toolkit/query";
+// import { toast } from "sonner";
+
+// const Profile = () => {
+//     const [name, setName] = useState("");
+//     const [profilePhoto, setProfilePhoto] = useState("");
+//     const [isOpen, setIsOpen] = useState(false);
+
+//     const { data, isLoading, refetch } = useLoadUserQuery();
+//     const [
+//         updateUser,
+//         {
+//           data: updateUserData,
+//           isLoading: updateUserIsLoading,
+//           isError,
+//           error,
+//           isSuccess,
+//         },
+//       ] = useUpdateUserMutation(); 
+
+//     const onChangeHandler = (e) => {
+//         const file = e.target.files?.[0];
+//         if (file) {
+//             console.log("Selected file:", file);
+//             setProfilePhoto(file);
+//         }
+//     };
+
+//     const updateUserHandler = async () => {
+//         try {
+//         const formData = new FormData();
+//             if (name) formData.append("name", name);
+//             if (profilePhoto) {
+//                 console.log("Appending file to formData:", profilePhoto);
+//         formData.append("profilePhoto", profilePhoto);
+//             }
+
+//             const response = await updateUser(formData).unwrap();
+//             console.log("Update response:", response);
+
+//             if (response.success) {
+//                 toast.success(response.message || "Profile updated successfully");
+//                 refetch();
+//                 setIsOpen(false); // Close dialog after successful update
+//             }
+//         } catch (error) {
+//             console.error("Update error:", error);
+//             toast.error(error.data?.message || "Failed to update profile");
+//         }
+//     };
+
+//     useEffect(() => {
+//         refetch();
+//     }, []);
+
+//     useEffect(() => {
+//         if (isSuccess) {
+//             refetch();
+//             toast.success(data.message || "Profile updated.");
+//         }
+//         if (isError) {
+//             toast.error(error.message || "Failed to update profile");
+//         }
+//     }, [error, updateUserData, isSuccess, isError]);
+
+//     if (isLoading) return <h1>profile Loading...</h1>
+//     const user = data && data.user;
+
+//     console.log(user);
+
+
+//     return (
+//         <div className="max-w-4xl mx-auto px-4 my-24">
+//             <h1 className="font-bold text-2xl text-center md:text-left">Profile</h1>
+//             {/* <h1 className="font-bold text-2xl text-center md:text-left">PROFILE</h1> */}
+//             <div className="flex flex-col md:flex-row items-center md:items-start gap-8 my-5">
+//                 <div className="flex flex-col items-center">
+//                     <Avatar className="h-24 w-24 md:h-32 md:w-32 mb-4 rounded-full overflow-hidden">
+//                         <AvatarImage
+//                             src={user.photoUrl || "https://github.com/shadcn.png"}
+//                             alt="@shadcn"
+//                         />
+//                         <AvatarFallback>CN</AvatarFallback>
+//                     </Avatar>
+//                 </div>
+//                 <div>
+//                     <div className="mb-2">
+//                         <h1 className="font-semibold text-gray-900 dark:text-gray-100">
+//                             Name:
+//                             <span className="font-normal text-gray-700 dark:text-gray-300 ml-2">
+//                                 {user.name}
+//                             </span>
+//                         </h1>
+//                     </div>
+//                     <div className="mb-2">
+//                         <h1 className="font-semibold text-gray-900 dark:text-gray-100">
+//                             Email:
+//                             <span className="font-normal text-gray-700 dark:text-gray-300 ml-2">
+//                                 {user.email}
+//                             </span>
+//                         </h1>
+//                     </div>
+//                     <div className="mb-2">
+//                         <h1 className="font-semibold text-gray-900 dark:text-gray-100">
+//                             Role:
+//                             <span className="font-normal text-gray-700 dark:text-gray-300 ml-2">
+//                             {user.role.toUpperCase()}
+//                             </span>
+//                         </h1>
+//                     </div>
+//                     <Dialog open={isOpen} onOpenChange={setIsOpen}>
+//                         <DialogTrigger asChild>
+//                             <Button size="sm" className="mt-2">
+//                                 Edit Profile
+//                             </Button>
+//                         </DialogTrigger>
+//                         <DialogContent>
+//                             <DialogHeader>
+//                                 <DialogTitle>Edit Profile</DialogTitle>
+//                                 <DialogDescription>
+//                                     Make changes to your profile here. Click save when you're done.
+//                                 </DialogDescription>
+//                             </DialogHeader>
+//                             <div className="grid gap-4 py-4">
+//                                 <div className="grid grid-cols-4 items-center gap-4">
+//                                     <Label>Name</Label>
+//                                     <Input
+//                                         type="text"
+//                                         value={name}
+//                                         onChange={(e) => setName(e.target.value)}
+//                                         placeholder="Name"
+//                                         className="col-span-3"
+//                                     />
+//                                 </div>
+//                                 <div className="grid grid-cols-4 items-center gap-4">
+//                                     <Label>Profile Photo</Label>
+//                                     <Input
+//                                         type="file"
+//                                         accept="image/*"
+//                                         onChange={onChangeHandler}
+//                                         className="col-span-3"
+//                                     />
+//                                 </div>
+//                             </div>
+//                             <DialogFooter>
+//                                 <Button
+//                                     disabled={updateUserIsLoading}
+//                                     onClick={updateUserHandler}
+//                                 >
+//                                     {updateUserIsLoading ? (
+//                                         <>
+//                                             <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Please wait
+//                                         </>
+//                                     ) : (
+//                                         "Save Changes"
+//                                     )}
+//                                 </Button>
+//                             </DialogFooter>
+//                         </DialogContent>
+//                     </Dialog>
+//                 </div>
+//             </div>
+//             <div>
+//                 <h1 className="font-medium text-lg">Courses you're enrolled in</h1>
+//                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 my-5">
+//                     {user.enrolledCourses.length === 0  ? (
+//                         <div className="col-span-full flex flex-col items-center justify-center py-12 px-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700">
+//                             <svg className="w-16 h-16 text-gray-400 dark:text-gray-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+//                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+//                             </svg>
+//                             <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">No Courses Enrolled</h2>
+//                             <p className="text-gray-500 dark:text-gray-400 text-center max-w-sm">You haven't enrolled in any courses yet. Start your learning journey by exploring our available courses.</p>
+//                         </div>
+//                     ) : (
+//                         user.enrolledCourses.map((course) => <Course course={course} key={icourse._id} />)
+//                     )}
+//                 </div>
+//             </div>
+//         </div>
+//     );
+// };
+
+// export default Profile;
+
+
+
+import { DialogFooter, DialogHeader } from "@/components/ui/dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@radix-ui/react-avatar";
+import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import Course from "./Course";
+import { useLoadUserQuery, useUpdateUserMutation } from "@/features/api/authapi";
+import { toast } from "sonner";
+
+const Profile = () => {
+    const [name, setName] = useState("");
+    const [profilePhoto, setProfilePhoto] = useState(null);
+    const [isOpen, setIsOpen] = useState(false);
+
+    const { data, isLoading, refetch } = useLoadUserQuery();
+    const [updateUser, { isLoading: isUpdating }] = useUpdateUserMutation();
+
+    // Initialize form when user data is loaded
+    useEffect(() => {
+        if (data?.user) {
+            setName(data.user.name || "");
+            // Don't set profilePhoto from URL to avoid file input issues
+        }
+    }, [data]);
+
+    const onChangeHandler = (e) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setProfilePhoto(file);
+            // Show preview
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                // Update avatar preview
+                const avatarImg = document.getElementById('avatar-preview');
+                if (avatarImg) {
+                    avatarImg.src = reader.result;
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const updateUserHandler = async () => {
+        if (!data?.user) return;
+
+        try {
+            const formData = new FormData();
+            if (name) formData.append("name", name);
+            if (profilePhoto) {
+                formData.append("profilePhoto", profilePhoto);
+            }
+
+            const response = await updateUser(formData).unwrap();
+
+            if (response.success) {
+                toast.success(response.message || "Profile updated successfully");
+                refetch();
+                setIsOpen(false);
+            }
+        } catch (error) {
+            console.error("Update error:", error);
+            toast.error(error.data?.message || "Failed to update profile");
+        }
+    };
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center h-64">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-900"></div>
+            </div>
+        );
+    }
+
+    const user = data?.user;
+    if (!user) {
+        return (
+            <div className="text-center py-12">
+                <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300">
+                    User not found. Please log in again.
+                </h2>
+            </div>
+        );
+    }
+
+    return (
+        <div className="max-w-4xl mx-auto px-4 my-24">
+            <h1 className="font-bold text-2xl text-center md:text-left">Profile</h1>
+            <div className="flex flex-col md:flex-row items-center md:items-start gap-8 my-5">
+                <div className="flex flex-col items-center">
+                    <Avatar className="h-24 w-24 md:h-32 md:w-32 mb-4 rounded-full overflow-hidden">
+                        <AvatarImage
+                            id="avatar-preview"
+                            src={user.photoUrl || "https://github.com/shadcn.png"}
+                            alt={user.name || "User"}
+                            className="object-cover w-full h-full"
+                        />
+                        <AvatarFallback>
+                            {user.name?.charAt(0) || "U"}
+                        </AvatarFallback>
+                    </Avatar>
+                </div>
+                <div className="w-full">
+                    <div className="mb-4">
+                        <h1 className="font-semibold text-gray-900 dark:text-gray-100">
+                            Name:{" "}
+                            <span className="font-normal text-gray-700 dark:text-gray-300">
+                                {user.name || "Not set"}
+                            </span>
+                        </h1>
+                    </div>
+                    <div className="mb-4">
+                        <h1 className="font-semibold text-gray-900 dark:text-gray-100">
+                            Email:{" "}
+                            <span className="font-normal text-gray-700 dark:text-gray-300">
+                                {user.email || "Not set"}
+                            </span>
+                        </h1>
+                    </div>
+                    <div className="mb-4">
+                        <h1 className="font-semibold text-gray-900 dark:text-gray-100">
+                            Role:{" "}
+                            <span className="font-normal text-gray-700 dark:text-gray-300">
+                                {user.role?.toUpperCase() || "USER"}
+                            </span>
+                        </h1>
+                    </div>
+
+                    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+                        <DialogTrigger asChild>
+                            <Button size="sm" className="mt-2">
+                                Edit Profile
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Edit Profile</DialogTitle>
+                                <DialogDescription>
+                                    Make changes to your profile here. Click save when you're done.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="grid gap-4 py-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="name">Name</Label>
+                                    <Input
+                                        id="name"
+                                        value={name}
+                                        onChange={(e) => setName(e.target.value)}
+                                        placeholder="Enter your name"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="profilePhoto">Profile Photo</Label>
+                                    <Input
+                                        id="profilePhoto"
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={onChangeHandler}
+                                    />
+                                </div>
+                            </div>
+                            <DialogFooter>
+                                <Button
+                                    type="button"
+                                    onClick={updateUserHandler}
+                                    disabled={isUpdating}
+                                >
+                                    {isUpdating ? (
+                                        <>
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            Saving...
+                                        </>
+                                    ) : (
+                                        "Save Changes"
+                                    )}
+                                </Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+                </div>
+            </div>
+
+            <div className="mt-12">
+                <h2 className="text-xl font-semibold mb-4">Your Enrolled Courses</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {user.enrolledCourses?.length > 0 ? (
+                        user.enrolledCourses.map((course) => (
+                            <Course key={course._id} course={course} />
+                        ))
+                    ) : (
+                        <div className="col-span-full text-center py-8 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                            <p className="text-gray-500 dark:text-gray-400">
+                                You haven't enrolled in any courses yet.
+                            </p>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default Profile;

@@ -1,0 +1,40 @@
+═══════════════════════════════════════════════════════════════
+  INFORMATION NEEDED TO PUSH TO GITHUB
+═══════════════════════════════════════════════════════════════
+
+To push your code to GitHub, please provide:
+
+1. GITHUB USERNAME:
+   Example: john-doe or johndoe123
+   Your username: _______________________
+
+2. REPOSITORY NAME:
+   Example: e-learning-management-system
+   Your repository name: _______________________
+
+3. REPOSITORY STATUS:
+   ☐ I need to create a new repository on GitHub
+   ☐ I already have a repository (provide URL below)
+   Repository URL: _______________________
+
+═══════════════════════════════════════════════════════════════
+
+OPTION 1: Run the PowerShell Script (Easiest)
+───────────────────────────────────────────────
+1. Open PowerShell in this folder
+2. Run: .\push-to-github.ps1
+3. Follow the prompts
+
+OPTION 2: Manual Commands
+──────────────────────────
+After providing the info above, I'll give you exact commands to run.
+
+OPTION 3: GitHub Desktop (If Git Not Installed)
+─────────────────────────────────────────────────
+1. Download: https://desktop.github.com/
+2. Sign in with GitHub
+3. File → Add Local Repository
+4. Select this folder
+5. Click "Publish repository"
+
+═══════════════════════════════════════════════════════════════
