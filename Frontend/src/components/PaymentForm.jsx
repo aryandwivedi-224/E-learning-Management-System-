@@ -17,15 +17,18 @@ const PaymentForm = ({ amount, onSuccess }) => {
     setLoading(true);
 
     try {
+      const API_BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+      
       // Create payment intent
       const { data: paymentIntentData } = await axios.post(
-        'http://localhost:8080/api/v1/payment/create-payment-intent',
+        `${API_BASE_URL}/api/v1/payment/create-payment-intent`,
         { amount },
         {
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${localStorage.getItem('token')}`,
           },
+          withCredentials: true,
         }
       );
 
@@ -33,13 +36,14 @@ const PaymentForm = ({ amount, onSuccess }) => {
         // Here you would typically use Stripe.js to confirm the payment
         // For now, we'll just simulate a successful payment
         const { data: confirmData } = await axios.post(
-          'http://localhost:8080/api/v1/payment/confirm-payment',
+          `${API_BASE_URL}/api/v1/payment/confirm-payment`,
           { paymentIntentId: paymentIntentData.paymentIntentId },
           {
             headers: {
               'Content-Type': 'application/json',
               Authorization: `Bearer ${localStorage.getItem('token')}`,
             },
+            withCredentials: true,
           }
         );
 

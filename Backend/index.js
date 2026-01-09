@@ -65,12 +65,12 @@ app.get("/", (req, res) => {
 });
 
 // API Routes
-app.use("/api/auth", authRoutes);
-app.use("/api/user", userRoutes);
-app.use("/api/course", courseRoutes);
-app.use("/api/payment", paymentRoutes);
-app.use("/api/purchase", purchaseCourseRoutes);
-app.use("/api/media", mediaRoutes);
+app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/user", userRoutes);
+app.use("/api/v1/course", courseRoutes);
+app.use("/api/v1/payment", paymentRoutes);
+app.use("/api/v1/purchase", purchaseCourseRoutes);
+app.use("/api/v1/media", mediaRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
