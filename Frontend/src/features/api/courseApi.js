@@ -1,6 +1,7 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { getApiBaseUrl } from "@/lib/utils.js";
 
-const COURSE_API = (import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || "http://localhost:8080") + "/api/v1/course";
+const COURSE_API = getApiBaseUrl() + "/api/v1/course";
 
 export const courseApi = createApi({
   reducerPath: "courseApi",
@@ -57,11 +58,14 @@ export const courseApi = createApi({
       providesTags: ["Refetch_Creator_Course"],
     }),
     getCourseById: builder.query({
-      query: (id) => ({
-        url: `/${id}`,
+      query: (courseId) => ({
+        url: `/${courseId}`,
         method: "GET",
       }),
-      providesTags: ["Refetch_Creator_Course"],
+      providesTags: (result, error, courseId) => [
+        "Refetch_Creator_Course",
+        { type: "Refetch_Creator_Course", id: courseId },
+      ],
     }),
     editCourse: builder.mutation({
       query: ({ formData, courseId }) => ({
@@ -69,13 +73,10 @@ export const courseApi = createApi({
         method: "PUT",
         body: formData,
       }),
-      invalidatesTags: ["Refetch_Creator_Course"],
-    }),
-    getCourseById: builder.query({
-      query: (courseId) => ({
-        url: `/${courseId}`,
-        method: "GET",
-      }),
+      invalidatesTags: (result, error, { courseId }) => [
+        "Refetch_Creator_Course",
+        { type: "Refetch_Creator_Course", id: courseId },
+      ],
     }),
     createLecture: builder.mutation({
       query: ({ lectureTitle, courseId }) => ({
@@ -83,6 +84,10 @@ export const courseApi = createApi({
         method: "POST",
         body: { lectureTitle },
       }),
+      invalidatesTags: (result, error, { courseId }) => [
+        "Refetch_Lecture",
+        { type: "Refetch_Creator_Course", id: courseId },
+      ],
     }),
     getCourseLecture: builder.query({
       query: (courseId) => ({
@@ -103,6 +108,10 @@ export const courseApi = createApi({
         method: "POST",
         body: { lectureTitle, videoInfo, isPreviewFree },
       }),
+      invalidatesTags: (result, error, { courseId }) => [
+        "Refetch_Lecture",
+        { type: "Refetch_Creator_Course", id: courseId },
+      ],
     }),
     removeLecture: builder.mutation({
       query: (lectureId) => ({
@@ -122,12 +131,10 @@ export const courseApi = createApi({
         url: `/${courseId}?publish=${query}`,
         method: "PATCH",
       }),
-    }),
-    publishCourse: builder.mutation({
-      query: ({ courseId, query }) => ({
-        url: `/${courseId}?publish=${query}`,
-        method: "PATCH",
-      }),
+      invalidatesTags: (result, error, { courseId }) => [
+        "Refetch_Creator_Course",
+        { type: "Refetch_Creator_Course", id: courseId },
+      ],
     }),
 
   }),

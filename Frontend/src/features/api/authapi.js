@@ -113,10 +113,10 @@
 
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { userLoggedIn, userLoggedOut } from "../authSlice";
+import { getApiBaseUrl } from "@/lib/utils.js";
 
-// ✅ Base backend URL (Render / Local both supported)
-const BASE_URL =
-  import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
+// ✅ Base backend URL (Render / Local both supported) - normalized (no trailing slash)
+const BASE_URL = getApiBaseUrl();
 
 export const authApi = createApi({
   reducerPath: "authApi",

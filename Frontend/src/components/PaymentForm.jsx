@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import axios from "axios";
+import { getApiBaseUrl } from "@/lib/utils.js";
 
 const PaymentForm = ({ amount, onSuccess }) => {
   const [loading, setLoading] = useState(false);
@@ -17,7 +18,7 @@ const PaymentForm = ({ amount, onSuccess }) => {
     setLoading(true);
 
     try {
-      const API_BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+      const API_BASE_URL = getApiBaseUrl();
       
       // Create payment intent
       const { data: paymentIntentData } = await axios.post(

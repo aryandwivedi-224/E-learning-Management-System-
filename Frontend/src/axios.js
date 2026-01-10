@@ -1,8 +1,9 @@
 import axios from "axios";
+import { getApiBaseUrl } from "./lib/utils.js";
 
 const api = axios.create({
   // 🔴 BACKEND BASE URL (Render) - Use environment variable
-  baseURL: import.meta.env.VITE_API_URL || "https://e-learning-management-system-l5yo.onrender.com",
+  baseURL: getApiBaseUrl(),
 
   // 🔑 VERY IMPORTANT FOR COOKIE AUTH
   withCredentials: true,

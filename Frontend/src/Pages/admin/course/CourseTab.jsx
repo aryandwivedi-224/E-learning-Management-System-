@@ -32,28 +32,11 @@ const CourseTab = () => {
     const params = useParams();
 
     const courseId = params.courseId;
-    const { data: courseByIdData, isLoading: courseByIdLoading, refetch } =
+    const { data: courseData, isLoading: courseLoading, refetch } =
         useGetCourseByIdQuery(courseId);
 
     const navigate = useNavigate();
-    const [publishCourse, { }] = usePublishCourseMutation();
-
-    useEffect(() => {
-        if (courseByIdData?.course) {
-            const course = courseByIdData?.course;
-            setInput({
-                courseTitle: course.courseTitle,
-                subTitle: course.subTitle,
-                description: course.description,
-                category: course.category,
-                courseLevel: course.courseLevel,
-                coursePrice: course.coursePrice,
-                courseThumbnail: "",
-            });
-        }
-    }, [courseByIdData]);
-
-    const { data: courseData, isLoading: courseLoading } = useGetCourseByIdQuery(courseId);
+    const [publishCourse] = usePublishCourseMutation();
     const [editCourse, { isLoading, isSuccess, error }] = useEditCourseMutation();
 
     const [input, setInput] = useState({
@@ -87,11 +70,13 @@ const CourseTab = () => {
     useEffect(() => {
         if (isSuccess) {
             toast.success("Course updated successfully");
+            // Refetch course data to show updated information immediately
+            refetch();
         }
         if (error) {
             toast.error(error.data?.message || "Failed to update course");
         }
-    }, [isSuccess, error]);
+    }, [isSuccess, error, refetch]);
 
     const updateCourseHandler = async () => {
         try {
@@ -156,7 +141,6 @@ const CourseTab = () => {
         }
     };
 
-    if (courseByIdLoading) return <h1>Loading...</h1>
 
     return (
         <Card>
@@ -168,8 +152,8 @@ const CourseTab = () => {
                     </CardDescription>
                 </div>
                 <div className="space-x-2">
-                    <Button disabled={courseByIdData?.course.lectures.length === 0} variant="outline" onClick={() => publishStatusHandler(courseByIdData?.course.isPublished ? "false" : "true")}>
-                        {courseByIdData?.course.isPublished ? "Unpublished" : "Publish"}
+                    <Button disabled={courseData?.course?.lectures?.length === 0} variant="outline" onClick={() => publishStatusHandler(courseData?.course?.isPublished ? "false" : "true")}>
+                        {courseData?.course?.isPublished ? "Unpublished" : "Publish"}
                     </Button>
 
                     <Button >Remove Course</Button>
